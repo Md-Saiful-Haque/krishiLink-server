@@ -27,13 +27,19 @@ app.get('/', (req, res) => {
 async function run() {
   try {
     await client.connect();
-    
+    const myDB = client.db('farmer-db')
+    const cropCollection = myDB.collection('crop')
 
+    app.get('/latest/crop', async (req, res) => {
+      const cursor = cropCollection.find().limit(6)
+      const result = await cursor.toArray()
+      res.send(result)
+    })
 
 
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } 
+  }
   finally {
     //await client.close();
   }

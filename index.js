@@ -30,9 +30,22 @@ async function run() {
     const myDB = client.db('farmer-db')
     const cropCollection = myDB.collection('crop')
 
+    app.get('/crop', async (req, res) => {
+      const cursor = cropCollection.find()
+      const result = await cursor.toArray()
+      res.send(result)
+    })
+
     app.get('/latest/crop', async (req, res) => {
       const cursor = cropCollection.find().limit(6)
       const result = await cursor.toArray()
+      res.send(result)
+    })
+
+    app.post('/crop', async (req, res) => {
+      const newCrop = req.body
+      console.log(newCrop)
+      const result = await cropCollection.insertOne(newCrop)
       res.send(result)
     })
 

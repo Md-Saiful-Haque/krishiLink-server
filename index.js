@@ -2,7 +2,7 @@ const express = require('express')
 const cors = require('cors')
 require('dotenv').config()
 const app = express()
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 3000
 
 
@@ -31,7 +31,13 @@ async function run() {
     const cropCollection = myDB.collection('crop')
 
     app.get('/crop', async (req, res) => {
-      const cursor = cropCollection.find()
+      const email = req.query.email
+      //console.log('saiful')
+      const query = {}
+      if (email) {
+        query["owner.ownerEmail"] = email
+      }
+      const cursor = cropCollection.find(query)
       const result = await cursor.toArray()
       res.send(result)
     })
@@ -42,10 +48,38 @@ async function run() {
       res.send(result)
     })
 
+    app.get("/crop/:id",  async (req, res) => {
+      const { id } = req.params;
+      const objectId = new ObjectId(id);
+
+      const result = await cropCollection.findOne({ _id: objectId });
+      console.log(result)
+
+      res.send({
+        success: true,
+        result,
+      });
+    });
+
+
     app.post('/crop', async (req, res) => {
       const newCrop = req.body
       console.log(newCrop)
       const result = await cropCollection.insertOne(newCrop)
+      res.send(result)
+    })
+
+    app.put('/crop/:id', async(req, res) => {
+      console.log('saiful')
+      const {id} = req.params
+      const data = req.body
+      const objectId = new ObjectId(id)
+      const filter = { _id: objectId}
+      console.log(data, filter)
+      const update = {
+        $set: data
+      }
+      const result = await cropCollection.updateOne(filter, update)
       res.send(result)
     })
 

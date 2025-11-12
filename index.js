@@ -29,6 +29,7 @@ async function run() {
     await client.connect();
     const myDB = client.db('farmer-db')
     const cropCollection = myDB.collection('crop')
+    const interestCollection = myDB.collection('interests')
 
     app.get('/crop', async (req, res) => {
       const email = req.query.email
@@ -61,6 +62,12 @@ async function run() {
       });
     });
 
+    app.get('/search', async (req, res) => {
+      const search = req.query.search
+      const result = await cropCollection.find({name: {$regex: search, $options: 'i'}}).toArray()
+      res.send(result)
+    })
+
 
     app.post('/crop', async (req, res) => {
       const newCrop = req.body
@@ -80,6 +87,27 @@ async function run() {
         $set: data
       }
       const result = await cropCollection.updateOne(filter, update)
+      res.send(result)
+    })
+
+    // app.get("/crop/interests/:cropId", async (req, res) => {
+    // const cropId = req.params.id;
+    // const interests = await interestCollection.find({ cropId }).toArray();
+    // res.send({ success: true, result: interests });
+    // })
+
+    app.get('/crop/interests/:cropId', async (req, res) => {
+      const cropId = req.params.cropId;
+      const query = { crop: cropId }
+      const cursor = interestCollection.find(query)
+      const result = await cursor.toArray();
+      res.send(result);
+    })
+
+    app.post('/interests', async (req, res) => {
+      const newInterests = req.body
+      newInterests.cropId = new ObjectId(newInterests.cropId)
+      const result = await interestCollection.insertOne(newInterests)
       res.send(result)
     })
 

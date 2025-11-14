@@ -82,7 +82,7 @@ async function run() {
       const data = req.body
       const objectId = new ObjectId(id)
       const filter = { _id: objectId}
-      console.log(data, filter)
+      //console.log(data, filter)
       const update = {
         $set: data
       }
@@ -98,16 +98,33 @@ async function run() {
 
     app.get('/crop/interests/:cropId', async (req, res) => {
       const cropId = req.params.cropId;
-      const query = { crop: cropId }
-      const cursor = interestCollection.find(query)
+      console.log(cropId)
+      const query = { cropId: new ObjectId(cropId) }
+      //const query = { crop: cropId }
+      const cursor = interestCollection.find(query).sort({quantity: -1})
       const result = await cursor.toArray();
       res.send(result);
     })
 
     app.post('/interests', async (req, res) => {
       const newInterests = req.body
+      const existings = await interestCollection.findOne({userEmail: newInterests.userEmail , cropId: new ObjectId(newInterests.cropId)})
+      if(existings) {
+        res.send({message: 'Already added'})
+      }
       newInterests.cropId = new ObjectId(newInterests.cropId)
       const result = await interestCollection.insertOne(newInterests)
+      res.send(result)
+    })
+
+    app.get('/interests', async (req, res) => {
+      const email = req.query.email
+      const query = {}
+      if (email) {
+        query.userEmail = email;
+      }
+      const cursor = interestCollection.find(query).sort({quantity: -1});
+      const result = await cursor.toArray()
       res.send(result)
     })
 
@@ -117,6 +134,36 @@ async function run() {
       const result = await cropCollection.deleteOne(query)
       res.send(result)
     })
+
+    app.put("/interest/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { status } = req.body;
+
+    const filter = { _id: new ObjectId(id) };
+    const update = { $set: { status } };
+    await interestCollection.updateOne(filter, update);
+
+    const updatedInterest = await interestCollection.findOne(filter);
+
+    
+    if (status === "accepted") {
+      const crop = await cropCollection.findOne({ _id: new ObjectId(updatedInterest.cropId) });
+      if (crop) {
+        const newQty = Math.max(crop.quantity - updatedInterest.quantity, 0);
+        await cropCollection.updateOne(
+          { _id: new ObjectId(updatedInterest.cropId) },
+          { $set: { quantity: newQty } }
+        );
+      }
+    }
+
+    res.send({ success: true, result: updatedInterest });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ success: false, message: "Server error" });
+  }
+});
 
 
     await client.db("admin").command({ ping: 1 });

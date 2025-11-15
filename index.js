@@ -90,11 +90,6 @@ async function run() {
       res.send(result)
     })
 
-    // app.get("/crop/interests/:cropId", async (req, res) => {
-    // const cropId = req.params.id;
-    // const interests = await interestCollection.find({ cropId }).toArray();
-    // res.send({ success: true, result: interests });
-    // })
 
     app.get('/crop/interests/:cropId', async (req, res) => {
       const cropId = req.params.cropId;
@@ -146,7 +141,6 @@ async function run() {
 
     const updatedInterest = await interestCollection.findOne(filter);
 
-    
     if (status === "accepted") {
       const crop = await cropCollection.findOne({ _id: new ObjectId(updatedInterest.cropId) });
       if (crop) {
